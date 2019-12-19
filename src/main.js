@@ -4,6 +4,11 @@ import router from './router'
 import store from './store'
 import { post } from './utils/request'
 import moment from 'moment'
+import VueQuillEditor from 'vue-quill-editor'
+import 'quill/dist/quill.core.css'
+import 'quill/dist/quill.snow.css'
+import 'quill/dist/quill.bubble.css'
+import BaiduMap from 'vue-baidu-map'
 import 'moment/locale/zh-cn'
 moment.locale('zh-cn')
 import {
@@ -36,28 +41,30 @@ Vue.prototype.$post = post
 Vue.prototype.$message = Message
 Vue.prototype.$notification = Notification
 
-Vue.use(Button)
-Vue.use(Layout)
-Vue.use(Icon)
-Vue.use(Form)
-Vue.use(Input)
-Vue.use(Menu)
-Vue.use(Message)
-Vue.use(Card)
-Vue.use(Modal)
-Vue.use(Table)
-Vue.use(Dropdown)
-Vue.use(Select)
-Vue.use(Avatar)
-Vue.use(Badge)
-Vue.use(Notification)
-Vue.use(DatePicker)
-Vue.use(Row)
-Vue.use(Col)
-Vue.use(InputNumber)
-Vue.use(Tabs)
-Vue.use(Cascader)
-Vue.use(Upload)
+Vue.use(VueQuillEditor)
+  .use(BaiduMap, { ak: 'LGDmcEvlEAVLFuEYyGsXQDj7dFlu2Hxm' })
+  .use(Button)
+  .use(Layout)
+  .use(Icon)
+  .use(Form)
+  .use(Input)
+  .use(Menu)
+  .use(Message)
+  .use(Card)
+  .use(Modal)
+  .use(Table)
+  .use(Dropdown)
+  .use(Select)
+  .use(Avatar)
+  .use(Badge)
+  .use(Notification)
+  .use(DatePicker)
+  .use(Row)
+  .use(Col)
+  .use(InputNumber)
+  .use(Tabs)
+  .use(Cascader)
+  .use(Upload)
 
 new Vue({
   router,
