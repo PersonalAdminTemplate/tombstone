@@ -97,6 +97,28 @@
             ]"
           />
         </a-form-item>
+        <!-- 上传图片辅助组件 -->
+        <div class="clearfix">
+          <a-upload
+            v-show="false"
+            class="img-uploader"
+            listType="picture-card"
+            :fileList="photosList"
+            :customRequest="customRequestPhotosDesc"
+            :beforeUpload="beforeUpload"
+          >
+          </a-upload>
+        </div>
+        <a-form-item
+          :label-col="labelCol"
+          :wrapper-col="wrapperCol"
+          label="隐藏简介"
+        >
+          <a-switch
+            v-decorator="['isDescHide', { valuePropName: 'checked' }]"
+          />
+        </a-form-item>
+        <!-- 上传图片组件over -->
         <a-form-item
           :label-col="labelCol"
           :wrapper-col="wrapperCol"
@@ -104,6 +126,7 @@
         >
           <div class="edit_container">
             <quill-editor
+              class="ql-editor"
               v-model="description"
               ref="myQuillEditor"
               :options="editorOption"
@@ -114,22 +137,16 @@
             </quill-editor>
           </div>
         </a-form-item>
-        <!-- <a-form-item
+
+        <a-form-item
           :label-col="labelCol"
           :wrapper-col="wrapperCol"
-          label="生平"
+          label="隐藏图片视频"
         >
-          <a-textarea
-            v-decorator="[
-              'description',
-              {
-                rules: [{ required: true, message: '请输入生平介绍!' }]
-              }
-            ]"
-            placeholder="请输入生平介绍"
-            :autosize="{ minRows: 4 }"
+          <a-switch
+            v-decorator="['isMediaHide', { valuePropName: 'checked' }]"
           />
-        </a-form-item> -->
+        </a-form-item>
 
         <a-form-item
           :label-col="labelCol"
@@ -166,6 +183,20 @@
             </a-modal>
           </div>
         </a-form-item>
+        <!-- 相册对应描述 -->
+        <a-form-item
+          :label-col="labelCol"
+          :wrapper-col="wrapperCol"
+          v-for="k in photosList.length"
+          :key="k"
+          :label="`照片描述${k}`"
+        >
+          <a-input
+            v-decorator="[`names[${k}]`]"
+            placeholder="请输入描述"
+            style="width: 80%; margin-right: 8px"
+          />
+        </a-form-item>
         <a-form-item
           :label-col="labelCol"
           :wrapper-col="wrapperCol"
@@ -190,7 +221,7 @@
         <a-form-item
           :label-col="labelCol"
           :wrapper-col="wrapperCol"
-          label="视频"
+          label="音频"
         >
           <div class="clearfix">
             <a-upload
@@ -213,6 +244,11 @@
           :wrapper-col="wrapperCol"
           label="墓地"
         >
+          <a-input-search
+            style="width: 100%"
+            placeholder="请输入地名"
+            @search="onSearch"
+          />
           <baidu-map
             class="bm-view"
             :center="center"
@@ -224,6 +260,7 @@
             @moveend="syncCenterAndZoom"
             @zoomend="syncCenterAndZoom"
           >
+            <bm-navigation anchor="BMAP_ANCHOR_TOP_RIGHT"></bm-navigation>
             <bm-marker
               :position="center"
               :dragging="true"
@@ -252,6 +289,7 @@
 </template>
 
 <script>
+import * as Quill from 'quill'
 import addressOptions from '@/utils/json'
 import API from '@/utils/api'
 import OSS from 'ali-oss'
@@ -260,8 +298,28 @@ import uuidv1 from 'uuid/v1'
 export default {
   name: 'AddInfo',
   data() {
+    let fontSizeStyle = Quill.import('attributors/style/size')
+    fontSizeStyle.whitelist = ['12px', '14px', '16px', '20px', '24px', '36px']
+    Quill.register(fontSizeStyle, true)
+
+    //quill编辑器的字体
+    var fonts = [
+      'SimSun',
+      'SimHei',
+      'Microsoft-YaHei',
+      'KaiTi',
+      'FangSong',
+      'Arial',
+      'Times-New-Roman',
+      'sans-serif'
+    ]
+    var Font = Quill.import('formats/font')
+    Font.whitelist = fonts
+    //将字体加入到白名单
+    Quill.register(Font, true)
     return {
       // 地图相关
+      addressKey: '',
       center: {
         lat: 0,
         lng: 0
@@ -296,117 +354,131 @@ export default {
       description: ``,
       editorOption: {
         modules: {
-          toolbar: [
-            ['bold', 'italic', 'underline', 'strike', 'color'], // toggled buttons
-            ['blockquote'],
-            [{ list: 'ordered' }, { list: 'bullet' }], // 有序、无序列表
-            [{ script: 'sub' }, { script: 'super' }], // 上标/下标
-            [
-              {
-                color: [
-                  '#ffffff',
-                  '#ffd7d5',
-                  '#ffdaa9',
-                  '#fffed5',
-                  '#d4fa00',
-                  '#73fcd6',
-                  '#a5c8ff',
-                  '#ffacd5',
-                  '#ff7faa',
-                  '#d6d6d6',
-                  '#ffacaa',
-                  '#ffb995',
-                  '#fffb00',
-                  '#73fa79',
-                  '#00fcff',
-                  '#78acfe',
-                  '#d84fa9',
-                  '#ff4f79',
-                  '#b2b2b2',
-                  '#d7aba9',
-                  '#ff6827',
-                  '#ffda51',
-                  '#00d100',
-                  '#00d5ff',
-                  '#0080ff',
-                  '#ac39ff',
-                  '#ff2941',
-                  '#888888',
-                  '#7a4442',
-                  '#ff4c00',
-                  '#ffa900',
-                  '#3da742',
-                  '#3daad6',
-                  '#0052ff',
-                  '#7a4fd6',
-                  '#d92142',
-                  '#000000',
-                  '#7b0c00',
-                  '#ff0000',
-                  '#d6a841',
-                  '#407600',
-                  '#007aaa',
-                  '#021eaa',
-                  '#797baa',
-                  '#ab1942'
-                ]
-              },
-              {
-                background: [
-                  '#ffffff',
-                  '#ffd7d5',
-                  '#ffdaa9',
-                  '#fffed5',
-                  '#d4fa00',
-                  '#73fcd6',
-                  '#a5c8ff',
-                  '#ffacd5',
-                  '#ff7faa',
-                  '#d6d6d6',
-                  '#ffacaa',
-                  '#ffb995',
-                  '#fffb00',
-                  '#73fa79',
-                  '#00fcff',
-                  '#78acfe',
-                  '#d84fa9',
-                  '#ff4f79',
-                  '#b2b2b2',
-                  '#d7aba9',
-                  '#ff6827',
-                  '#ffda51',
-                  '#00d100',
-                  '#00d5ff',
-                  '#0080ff',
-                  '#ac39ff',
-                  '#ff2941',
-                  '#888888',
-                  '#7a4442',
-                  '#ff4c00',
-                  '#ffa900',
-                  '#3da742',
-                  '#3daad6',
-                  '#0052ff',
-                  '#7a4fd6',
-                  '#d92142',
-                  '#000000',
-                  '#7b0c00',
-                  '#ff0000',
-                  '#d6a841',
-                  '#407600',
-                  '#007aaa',
-                  '#021eaa',
-                  '#797baa',
-                  '#ab1942'
-                ]
+          toolbar: {
+            container: [
+              ['bold', 'italic', 'underline', 'strike'], // toggled buttons
+              ['blockquote'],
+              [{ list: 'ordered' }, { list: 'bullet' }], // 有序、无序列表
+              [{ script: 'sub' }, { script: 'super' }], // 上标/下标
+              [
+                {
+                  color: [
+                    '#ffffff',
+                    '#ffd7d5',
+                    '#ffdaa9',
+                    '#fffed5',
+                    '#d4fa00',
+                    '#73fcd6',
+                    '#a5c8ff',
+                    '#ffacd5',
+                    '#ff7faa',
+                    '#d6d6d6',
+                    '#ffacaa',
+                    '#ffb995',
+                    '#fffb00',
+                    '#73fa79',
+                    '#00fcff',
+                    '#78acfe',
+                    '#d84fa9',
+                    '#ff4f79',
+                    '#b2b2b2',
+                    '#d7aba9',
+                    '#ff6827',
+                    '#ffda51',
+                    '#00d100',
+                    '#00d5ff',
+                    '#0080ff',
+                    '#ac39ff',
+                    '#ff2941',
+                    '#888888',
+                    '#7a4442',
+                    '#ff4c00',
+                    '#ffa900',
+                    '#3da742',
+                    '#3daad6',
+                    '#0052ff',
+                    '#7a4fd6',
+                    '#d92142',
+                    '#000000',
+                    '#7b0c00',
+                    '#ff0000',
+                    '#d6a841',
+                    '#407600',
+                    '#007aaa',
+                    '#021eaa',
+                    '#797baa',
+                    '#ab1942'
+                  ]
+                },
+                {
+                  background: [
+                    '#ffffff',
+                    '#ffd7d5',
+                    '#ffdaa9',
+                    '#fffed5',
+                    '#d4fa00',
+                    '#73fcd6',
+                    '#a5c8ff',
+                    '#ffacd5',
+                    '#ff7faa',
+                    '#d6d6d6',
+                    '#ffacaa',
+                    '#ffb995',
+                    '#fffb00',
+                    '#73fa79',
+                    '#00fcff',
+                    '#78acfe',
+                    '#d84fa9',
+                    '#ff4f79',
+                    '#b2b2b2',
+                    '#d7aba9',
+                    '#ff6827',
+                    '#ffda51',
+                    '#00d100',
+                    '#00d5ff',
+                    '#0080ff',
+                    '#ac39ff',
+                    '#ff2941',
+                    '#888888',
+                    '#7a4442',
+                    '#ff4c00',
+                    '#ffa900',
+                    '#3da742',
+                    '#3daad6',
+                    '#0052ff',
+                    '#7a4fd6',
+                    '#d92142',
+                    '#000000',
+                    '#7b0c00',
+                    '#ff0000',
+                    '#d6a841',
+                    '#407600',
+                    '#007aaa',
+                    '#021eaa',
+                    '#797baa',
+                    '#ab1942'
+                  ]
+                }
+              ], // 字体颜色、字体背景颜色
+              [{ font: fonts }],
+              [{ size: fontSizeStyle.whitelist }],
+              [{ header: 1 }, { header: 2 }],
+              [{ indent: '-1' }, { indent: '+1' }],
+              [{ direction: 'rtl' }],
+              [{ align: [] }],
+              ['image'],
+              ['clean']
+            ],
+            handlers: {
+              image: function(value) {
+                if (value) {
+                  document.querySelector('.img-uploader input').click()
+                } else {
+                  this.quill.format('image', false)
+                }
               }
-            ], // 字体颜色、字体背景颜色
-            [{ header: 1 }, { header: 2 }],
-            [{ indent: '-1' }, { indent: '+1' }],
-            [{ direction: 'rtl' }],
-            [{ align: [] }],
-            ['clean']
-          ]
+            }
+          }
         },
         placeholder: '请输入...'
       }
@@ -419,73 +491,75 @@ export default {
   },
   beforeCreate() {
     if (this.$route.params && this.$route.params.id) {
-      this.$post(API.selectInfo, { id: this.$route.params.id }).then(res => {
-        console.log(res, 'ressss')
-        this.center.lat = res.latitude
-        this.center.lng = res.longitude
-        this.mapInfo = res.cemetery
-        console.log(this.center, 'centerrr')
-        this.info = res
-        // 处理省市区数据
-        const address = []
-        address.push(res.province)
-        address.push(res.city)
-        address.push(res.district)
-        this.fileList.push({
-          url: res.headpic,
-          uid: '-1',
-          status: 'done',
-          name: res.headpic
-        })
-        // 处理照片
-        if (res.photos) {
-          const photoArray = res.photos.split(',')
-          photoArray.forEach((item, index) => {
-            this.photosList.push({
-              uid: `-(${index} + 1)`,
-              url: item,
-              name: item,
-              status: 'done'
+      this.$post(API.selectInfo, { id: this.$route.params.id, isEdit: 1 }).then(
+        res => {
+          this.center.lat = res.latitude
+          this.center.lng = res.longitude
+          this.mapInfo = res.cemetery
+          this.info = res
+          // 处理省市区数据
+          const address = []
+          address.push(res.province)
+          address.push(res.city)
+          address.push(res.district)
+          this.fileList.push({
+            url: res.headpic,
+            uid: '-1',
+            status: 'done',
+            name: res.headpic
+          })
+          // 处理照片
+          if (res.photos) {
+            const photoArray = res.photos.split(',')
+            photoArray.forEach((item, index) => {
+              this.photosList.push({
+                uid: `-(${index} + 1)`,
+                url: item,
+                name: item,
+                status: 'done'
+              })
             })
+          }
+          // 处理视频
+          if (res.videos) {
+            const videoList = res.videos.split(',')
+            videoList.forEach((item, index) => {
+              this.videoList.push({
+                url: item,
+                uid: `-(${index} + 1)`,
+                status: 'done',
+                name: item
+              })
+            })
+          }
+          // 处理音频
+          if (res.bgMusic) {
+            const audioList = res.bgMusic.split(',')
+            audioList.forEach((item, index) => {
+              this.audioList.push({
+                url: item,
+                uid: `-(${index} + 1)`,
+                status: 'done',
+                name: item
+              })
+            })
+          }
+          // 表单置空并赋值
+          this.description = res.description
+          this.form.resetFields()
+          this.form.setFieldsValue({
+            name: res.name,
+            birthday: moment(res.birthday, 'YYYY-MM-DD'),
+            festa: moment(res.festa, 'YYYY-MM-DD'),
+            address: address,
+            headpic: res.headpic,
+            photo: res.photos,
+            video: res.videos,
+            isMediaHide: res.isMediaHide === 1 ? true : false,
+            isDescHide: res.isDescHide === 1 ? true : false
           })
         }
-        // 处理视频
-        if (res.videos) {
-          const videoList = res.videos.split(',')
-          videoList.forEach((item, index) => {
-            this.videoList.push({
-              url: item,
-              uid: `-(${index} + 1)`,
-              status: 'done',
-              name: item
-            })
-          })
-        }
-        // 处理音频
-        if (res.bgMusic) {
-          const audioList = res.bgMusic.split(',')
-          audioList.forEach((item, index) => {
-            this.audioList.push({
-              url: item,
-              uid: `-(${index} + 1)`,
-              status: 'done',
-              name: item
-            })
-          })
-        }
-        // 表单置空并赋值
-        this.description = res.description
-        this.form.resetFields()
-        this.form.setFieldsValue({
-          name: res.name,
-          birthday: moment(res.birthday, 'YYYY-MM-DD'),
-          festa: moment(res.festa, 'YYYY-MM-DD'),
-          address: address,
-          headpic: res.headpic,
-          photo: res.photos,
-          video: res.videos
-        })
-      })
+      )
     }
   },
   methods: {
@@ -495,7 +569,6 @@ export default {
       const geolocation = new BMap.Geolocation()
       // 获取逆解析实例
       this.myGeo = new BMap.Geocoder()
-      console.log(_this.center)
       // 获取自动定位获取的坐标信息
       geolocation.getCurrentPosition(
         function(r) {
@@ -508,26 +581,31 @@ export default {
         { enableHighAccuracy: true }
       )
     },
+    // 搜索框搜索
+    onSearch(value) {
+      const _this = this
+      _this.myGeo.getPoint(value, function(r) {
+        _this.center.lng = r.lng
+        _this.center.lat = r.lat
+        _this.mapInfo = value
+      })
+    },
     /***
      * 地图点击事件。
      */
     getClickInfo(e) {
-      console.log(e)
       const _this = this
       _this.center.lng = e.point.lng
       _this.center.lat = e.point.lat
       this.myGeo.getLocation(e.point, result => {
-        console.log(result)
         _this.mapInfo = result.address + result.business
       })
     },
     syncCenterAndZoom(e) {
       const _this = this
       const { lng, lat } = e.target.getCenter()
-      console.log(e.target.getCenter())
       _this.center.lng = lng
       _this.center.lat = lat
-      console.log('移动', _this.center.lng, _this.center.lat)
       _this.zoom = e.target.getZoom()
     },
     infoWindowClose() {
@@ -558,14 +636,12 @@ export default {
           endpoint: 'oss-cn-beijing.aliyuncs.com',
           bucket: 'mbimage'
         })
-        console.log(client)
         client
           .put(
             uuidv1() + data.file.name,
             new Blob([data.file], { type: 'text/plain' })
           )
           .then(res => {
-            console.log(res)
             let headPic = {
               uid: res.name,
               name: res.name,
@@ -574,14 +650,10 @@ export default {
             }
             this.fileList = [headPic]
           })
-          .catch(err => {
-            console.log(err)
-          })
       })
     },
     // 照片上传前
-    async beforeUpload(file) {
-      console.log(file)
+    async beforeUpload() {
       // 统一获取OSS凭证
       await this.$post(API.getOSSToken).then(result => {
         const client = new OSS({
@@ -612,8 +684,23 @@ export default {
           }
           this.photosList.push(headPic)
         })
-        .catch(err => {
-          console.log(err)
+    },
+    // 编辑框插入图片
+    customRequestPhotosDesc(data) {
+      this.client
+        .put(
+          uuidv1() + data.file.name,
+          new Blob([data.file], { type: 'text/plain' })
+        )
+        .then(res => {
+          console.log(res)
+          let quill = this.$refs.myQuillEditor.quill
+          // 获取光标所在位置
+          let length = quill.getSelection().index
+          // 插入图片  res.info为服务器返回的图片地址
+          quill.insertEmbed(length, 'image', res.url)
+          // 调整光标到最后
+          quill.setSelection(length + 1)
         })
     },
     // 删除图片
@@ -628,8 +715,7 @@ export default {
     // 照片上传状态改变
     handleChangePhotos() {},
     // 视频上传前
-    async beforeUploadVideo(data) {
-      console.log(data)
+    async beforeUploadVideo() {
       // 获取上传视频凭证
       await this.$post(API.getOSSToken).then(result => {
         const client = new OSS({
@@ -646,22 +732,15 @@ export default {
     },
     // 自定义上传视频
     customRequestVideo(data) {
-      console.log(data)
-      this.video
-        .put(uuidv1() + data.file.name, data.file)
-        .then(res => {
-          let headPic = {
-            uid: data.file.uid,
-            name: res.name,
-            status: 'done',
-            url: res.res.requestUrls[0]
-          }
-          this.videoList.push(headPic)
-          console.log(res)
-        })
-        .catch(err => {
-          console.log(err)
-        })
+      this.video.put(uuidv1() + data.file.name, data.file).then(res => {
+        let headPic = {
+          uid: data.file.uid,
+          name: res.name,
+          status: 'done',
+          url: res.res.requestUrls[0]
+        }
+        this.videoList.push(headPic)
+      })
     },
     // 移除视频
     removeVideo(data) {
@@ -675,8 +754,7 @@ export default {
     // 视频状态修改
     handleChangeVideo() {},
     // 音频上传前
-    async beforeUploadAudio(data) {
-      console.log(data)
+    async beforeUploadAudio() {
       // 获取上传音频凭证
       await this.$post(API.getOSSToken).then(result => {
         const client = new OSS({
@@ -693,22 +771,15 @@ export default {
     },
     // 自定义上传音频
     customRequestAudio(data) {
-      console.log(data)
-      this.audio
-        .put(uuidv1() + data.file.name, data.file)
-        .then(res => {
-          let headPic = {
-            uid: data.file.uid,
-            name: res.name,
-            status: 'done',
-            url: res.res.requestUrls[0]
-          }
-          this.audioList.push(headPic)
-          console.log(res)
-        })
-        .catch(err => {
-          console.log(err)
-        })
+      this.audio.put(uuidv1() + data.file.name, data.file).then(res => {
+        let headPic = {
+          uid: data.file.uid,
+          name: res.name,
+          status: 'done',
+          url: res.res.requestUrls[0]
+        }
+        this.audioList.push(headPic)
+      })
     },
     // 移除视频
     removeAudio(data) {
@@ -742,9 +813,7 @@ export default {
           })
           const param = {
             name: values.name,
-            // birthday:  '',
             birthday: moment(values.birthday).format('YYYY-MM-DD'),
-            // festa: '',
             festa: moment(values.festa).format('YYYY-MM-DD'),
             headpic: this.fileList[0].url,
             province: values.address[0],
@@ -756,7 +825,11 @@ export default {
             longitude: this.center.lng,
             latitude: this.center.lat,
             description: this.description,
-            cemetery: this.mapInfo
+            cemetery: this.mapInfo,
+            isDescHide: values.isDescHide ? 1 : 0,
+            isMediaHide: values.isMediaHide ? 1 : 0,
+            photosDesc: JSON.stringify(values.names),
+            viewCount: this.info.viewCount
           }
           console.log(param)
           // 如果是修改
@@ -764,7 +837,6 @@ export default {
             param.id = this.$route.params.id
             param.index = this.info.index
             this.$post(API.updateInfo, param).then(res => {
-              console.log(res)
               if (!res) {
                 this.$message.success('修改成功！')
                 this.$router.push('/info/info')
@@ -788,9 +860,8 @@ export default {
     onEditorBlur() {}, // 失去焦点事件
     onEditorFocus() {}, // 获得焦点事件
     onEditorChange(event) {
-      console.log(event)
+      console.log(event.html)
       this.description = event.html
-      console.log(this.description)
     } // 内容改变事件
   }
 }
@@ -817,5 +888,23 @@ export default {
 .bm-view {
   width: 100%;
   height: 300px;
+}
+.quill_box {
+  .ql-toolbar.ql-snow {
+    border-color: #dcdfe6;
+  }
+  .ql-container {
+    height: 200px !important;
+    border-color: #dcdfe6;
+  }
+  .ql-snow .ql-picker-label::before {
+    position: relative;
+    top: -10px;
+  }
+  .ql-snow .ql-color-picker .ql-picker-label svg,
+  .ql-snow .ql-icon-picker .ql-picker-label svg {
+    position: relative;
+    top: -6px;
+  }
 }
 </style>

@@ -32,6 +32,18 @@
             style="width: 50px;heigth:50px"
           />
         </template>
+        <template slot="isMediaHide" slot-scope="text, record">
+          <a-switch
+            :checked="record.isMediaHide === 1 ? true : false"
+            @change="checked => mediaChange(checked, record)"
+          ></a-switch>
+        </template>
+        <template slot="isDescHide" slot-scope="text, record">
+          <a-switch
+            :checked="record.isDescHide === 1 ? true : false"
+            @change="checked => descChange(checked, record)"
+          ></a-switch>
+        </template>
         <template slot="operation" slot-scope="text, record">
           <a-button
             type="dashed"
@@ -137,6 +149,18 @@ export default {
           scopedSlots: { customRender: 'qrcode' }
         },
         {
+          title: '媒体隐藏',
+          dataIndex: 'isMediaHide',
+          align: 'center',
+          scopedSlots: { customRender: 'isMediaHide' }
+        },
+        {
+          title: '简介隐藏',
+          dataIndex: 'isDescHide',
+          align: 'center',
+          scopedSlots: { customRender: 'isDescHide' }
+        },
+        {
           title: '操作',
           dataIndex: 'operation',
           align: 'center',
@@ -175,6 +199,29 @@ export default {
     },
     add() {
       this.$router.push('/info/addInfo')
+    },
+    // 媒体隐藏
+    mediaChange(checked, record) {
+      console.log(checked, record)
+      this.$post(API.updateInfo, {
+        id: record.id,
+        isMediaHide: checked ? 1 : 0,
+        isDescHide: record.isDescHide,
+        viewCount: record.viewCount
+      }).then(() => {
+        this.queryInfo()
+      })
+    },
+    // 生平隐藏
+    descChange(checked, record) {
+      this.$post(API.updateInfo, {
+        id: record.id,
+        isMediaHide: record.isMediaHide,
+        isDescHide: checked ? 1 : 0,
+        viewCount: record.viewCount
+      }).then(() => {
+        this.queryInfo()
+      })
     },
     // 修改
     edit(text, record) {

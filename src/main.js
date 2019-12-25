@@ -33,7 +33,8 @@ import {
   InputNumber,
   Tabs,
   Cascader,
-  Upload
+  Upload,
+  Switch
 } from 'ant-design-vue'
 
 Vue.config.productionTip = false
@@ -65,6 +66,7 @@ Vue.use(VueQuillEditor)
   .use(Tabs)
   .use(Cascader)
   .use(Upload)
+  .use(Switch)
 
 new Vue({
   router,

@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { Message } from 'ant-design-vue'
 
+// Swagger 47.107.184.14:7777/swagger-ui.html#/
 // axios.defaults.baseURL = 'http://192.168.0.138:7777'
 axios.defaults.baseURL = 'http://47.107.184.14:7777'
 // axios.defaults.baseURL = 'http://113.246.243.124:7777'
